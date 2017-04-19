@@ -28,11 +28,28 @@ RUN pip install tables
 RUN mkdir -p /provisioning
 WORKDIR /provisioning
 
+# also need libgeos for Python Shapely package
+RUN apt-get update
+RUN apt-get -yq install libgeos-dev
+RUN echo "Installing GEOS libraries..." && \
+    mkdir -p /provisioning/spatialindex && \
+    cd /provisioning/spatialindex && \
+    curl -# -O http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz && \
+    tar -xf spatialindex-src-1.8.5.tar.gz && \
+    cd spatialindex-src-1.8.5 && \
+    ./configure --prefix=/usr/local && \
+    make && \
+    make install && \
+    ldconfig && \
+    rm -rf /provisioning/spatialindex
+
+# return to main directory after installing libgeos
+RUN cd /provisioning
 COPY ./urbanaccess.egg-info/requires.txt /provisioning/requires.txt
 
 RUN pip install -r ./requires.txt
 
-# can now install Urban Access via repo
-RUN python setup.py develop
-
 COPY . /provisioning
+
+# can now install Urban Access via repo
+RUN python ./setup.py develop
