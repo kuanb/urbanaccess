@@ -27,9 +27,9 @@ setup(
     ],
     packages=find_packages(exclude=['*.tests']),
     install_requires=[
-        'requests >= 2.9.1',
-        'pandas >= 0.16.0',
-        'numpy >= 1.11',
+        'requests>=2.9.1',
+        'pandas>=0.16.0',
+        'numpy>=1.11',
         'osmnet>=0.1a',
         'pandana>=0.2.0',
         'matplotlib>=2.0',
