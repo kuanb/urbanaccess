@@ -12,3 +12,6 @@ docker run -d urbanaccess tail -f /dev/null
 docker rename [container_id] urbanaccess
 docker exec -it urbanaccess bash
 ```
+
+# Executing the script
+Feel free to either run `examples/example.py` or follow along and enter in each step yourself to understand the steps involved in running through a typical UrbanAccess workflow.
