@@ -7,9 +7,11 @@ def continue_check(clarify=False):
     if clarify:
         message = 'Not a valid option. Try again.\n' + message
     response = raw_input(message)
-    if response in ['y', 'Y']:
+    if response in ['y',
+                                        'Y']:
         pass
-    elif response in ['n', 'N']:
+    elif response in ['n',
+                                        'N']:
         print('Exiting...')
         sys.exit()
     else:
@@ -41,7 +43,7 @@ urbanaccess.gtfsfeeds.download()
 gtfsfeed_path = None # use default gtfs save location
 validation = True
 verbose = True
-bbox = (-89.566399,42.984056,-89.229584,43.171917)
+bbox = (-89.566399, 42.984056, -89.229584, 43.171917)
 remove_stops_outsidebbox = True
 append_definitions = True
 # updates these attributes: stops, routes, trips, stop_times, calendar,
@@ -60,24 +62,35 @@ columns = ['route_id', 'direction_id', 'trip_id', 'service_id',
 day = 'wednesday' # pick an arbitrary day of week
 tripschedualselector = urbanaccess.gtfs.network.tripschedualselector
 cal_selected_trips = tripschedualselector(
-                                input_trips_df=loaded_feeds.trips[columns],
-                                input_calendar_df=loaded_feeds.calendar,
-                                day=day)
+                                input_trips_df = loaded_feeds.trips[columns],
+                                input_calendar_df = loaded_feeds.calendar,
+                                day = day)
 
 # approximate missing stop times via linear interpolation
 interpolatestoptimes = urbanaccess.gtfs.network.interpolatestoptimes
 intermediate_interpolation = interpolatestoptimes(
-                                stop_times_df=loaded_feeds.stop_times,
-                                calendar_selected_trips_df=cal_selected_trips,
-                                day=day)
+                                stop_times_df = loaded_feeds.stop_times,
+                                calendar_selected_trips_df = cal_selected_trips,
+                                day = day)
 
 # now calculate the difference in top times in new column
 timedifference = urbanaccess.gtfs.network.timedifference
-stop_times_int = timedifference(stop_times_df=intermediate_interpolation)
+stop_times_int = timedifference(stop_times_df = intermediate_interpolation)
 
 # now we can update loaded_feeds with this new dataframe
 loaded_feeds.stop_times_int = stop_times_int
 
 # now we need to calculate the headways, given the downloaded gtfs
 headway_timerange = ['07:00:00','10:00:00'] # approx a.m. peak
-urbanaccess.gtfs.headways.headways(loaded_feeds, headway_timerange)
+# the below function updates loaded_feeds, so that headways is populated
+loaded_feeds = urbanaccess.gtfs.headways.headways(
+                    loaded_feeds, headway_timerange)
+
+# save the results from these initial processing steps locally
+filename = 'temp_network_analyzed.h5'
+urbanaccess.gtfs.network.save_processed_gtfs_data(loaded_feeds, 'data', filename)
+# we can now reload from that save location if we want
+loaded_feeds = urbanaccess.gtfs.network.load_processed_gtfs_data('data', filename)
+
+# now we're ready to download OSM data, let's use same bbox from gtfs search
+osm_nodes, osm_edges = urbanaccess.osm.load.ua_network_from_bbox(bbox = bbox)
