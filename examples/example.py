@@ -92,5 +92,24 @@ urbanaccess.gtfs.network.save_processed_gtfs_data(loaded_feeds, 'data', filename
 # we can now reload from that save location if we want
 loaded_feeds = urbanaccess.gtfs.network.load_processed_gtfs_data('data', filename)
 
+# to proceed, we need to generate a network describing the transit data
+tr_network = urbanaccess.gtfs.network.create_transit_net(
+                                gtfsfeeds_df = loaded_feeds,
+                                day = day,
+                                timerange = headway_timerange,
+                                overwrite_existing_stop_times_int = False,
+                                use_existing_stop_times_int = True,
+                                save_processed_gtfs = False)
+
 # now we're ready to download OSM data, let's use same bbox from gtfs search
 osm_nodes, osm_edges = urbanaccess.osm.load.ua_network_from_bbox(bbox = bbox)
+
+# with the osm data, we can create a network just as we did with the gtfs data
+osm_network = urbanaccess.osm.network.create_osm_net(
+                                osm_edges = osm_edges,
+                                osm_nodes = osm_nodes,
+                                travel_speed_mph = 3, # walk speed average
+                                network_type = 'walk')
+
+
+
