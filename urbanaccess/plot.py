@@ -125,7 +125,8 @@ def plot_net(nodes=None,edges=None,x_col='x',y_col='y',bbox=None,
 
     log('Figure created. Took {:,.2f} seconds'.format(time.time()-start_time))
 
-    plt.show()
+    # plt.show()
+    plt.savefig('testplot.png')
 
     return fig, ax
 
@@ -160,7 +161,7 @@ def col_colors(df=None, col=None, num_bins=5, cmap='spectral',
     color_list = [cm.get_cmap(cmap)(x) for x in np.linspace(start,
                                                             stop, num_bins)]
     
-    cleaned_categories = [str(int(cat)) for cat in categories]
+    cleaned_categories = [int(cat) for cat in categories]
     colors = [color_list[cat] for cat in cleaned_categories]
     return colors
 

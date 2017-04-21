@@ -1,8 +1,9 @@
 import sys
 import urbanaccess
+import pandana as pdna
 
 # sets whether 'interactive mode' is on
-CONTINUECHECKON = True
+CONTINUECHECKON = False
 
 long_dash = ''.join(['-' for n in range(25)])
 def continue_check(custom_note='', clarify=False):
@@ -153,11 +154,40 @@ ua_network = urbanaccess.osm.network.create_osm_net(
 # =============
 continue_check(('Now we have all networks we need, so we can integrate them.'))
 
+# result urbanaccess_nw variables is an object with the following attributes:
+#   net_connector_edges,
+#   net_edges, net_nodes,
+#   osm_edges, osm_nodes,
+#   transit_edges, transit_nodes
 urbanaccess_nw = urbanaccess.network.integrate_network(
                                 urbanaccess_network = ua_network,
                                 headways = True,
                                 urbanaccess_gtfsfeeds_df = loaded_feeds,
                                 headway_statistic = 'mean')
 
+color_range = urbanaccess.plot.col_colors(
+                        df=urbanaccess_nw.net_connector_edges,
+                        col='mean',
+                        num_bins=5,
+                        cmap='YlOrRd',
+                        start=0.1,
+                        stop=0.9)
 
+urbanaccess.plot.plot_net(
+                        nodes=urbanaccess_nw.net_nodes,
+                        edges=urbanaccess_nw.net_edges,
+                        x_col='x',
+                        y_col='y',
+                        bbox=bbox,
+                        fig_height=25,
+                        margin=0.02,
+                        edge_color=color_range,
+                        edge_linewidth=1,
+                        edge_alpha=1,
+                        node_color='black',
+                        node_size=1,
+                        node_alpha=1,
+                        node_edgecolor='none',
+                        node_zorder=3,
+                        nodes_only=False)
 
