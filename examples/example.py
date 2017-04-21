@@ -93,7 +93,7 @@ urbanaccess.gtfs.network.save_processed_gtfs_data(loaded_feeds, 'data', filename
 loaded_feeds = urbanaccess.gtfs.network.load_processed_gtfs_data('data', filename)
 
 # to proceed, we need to generate a network describing the transit data
-tr_network = urbanaccess.gtfs.network.create_transit_net(
+ua_network = urbanaccess.gtfs.network.create_transit_net(
                                 gtfsfeeds_df = loaded_feeds,
                                 day = day,
                                 timerange = headway_timerange,
@@ -105,11 +105,17 @@ tr_network = urbanaccess.gtfs.network.create_transit_net(
 osm_nodes, osm_edges = urbanaccess.osm.load.ua_network_from_bbox(bbox = bbox)
 
 # with the osm data, we can create a network just as we did with the gtfs data
-osm_network = urbanaccess.osm.network.create_osm_net(
+ua_network = urbanaccess.osm.network.create_osm_net(
                                 osm_edges = osm_edges,
                                 osm_nodes = osm_nodes,
                                 travel_speed_mph = 3, # walk speed average
                                 network_type = 'walk')
+
+urbanaccess_nw = urbanaccess.network.integrate_network(
+                                urbanaccess_network = ua_network,
+                                headways = True,
+                                urbanaccess_gtfsfeeds_df = loaded_feeds,
+                                headway_statistic = 'mean')
 
 
 
