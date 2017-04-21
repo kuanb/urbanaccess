@@ -2,7 +2,7 @@ import sys
 import urbanaccess
 
 # sets whether 'interactive mode' is on
-CONTINUECHECKON = False
+CONTINUECHECKON = True
 
 long_dash = ''.join(['-' for n in range(25)])
 def continue_check(custom_note='', clarify=False):
@@ -10,7 +10,7 @@ def continue_check(custom_note='', clarify=False):
         print(item)
     
     # don't proceed unless check bool is on
-    if CONTINUECHECKON:
+    if not CONTINUECHECKON:
         return None
     
     message = '[yN] Continue? '
