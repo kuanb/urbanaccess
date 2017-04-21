@@ -1,22 +1,30 @@
 import sys
 import urbanaccess
 
-def continue_check(clarify=False):
-    print('\n---------------')
-    message = '[yN] Continue?'
+# sets whether 'interactive mode' is on
+CONTINUECHECKON = False
+
+long_dash = ''.join(['-' for n in range(25)])
+def continue_check(custom_note='', clarify=False):
+    for item in ['\n', long_dash, custom_note]:
+        print(item)
+    
+    # don't proceed unless check bool is on
+    if CONTINUECHECKON:
+        return None
+    
+    message = '[yN] Continue? '
     if clarify:
         message = 'Not a valid option. Try again.\n' + message
     response = raw_input(message)
-    if response in ['y',
-                                        'Y']:
-        pass
-    elif response in ['n',
-                                        'N']:
+    if response in ['y', 'Y']:
+        print(long_dash)
+    elif response in ['n', 'N']:
         print('Exiting...')
         sys.exit()
     else:
         clarify = True
-        continue_check(clarify)
+        continue_check(custom_note, clarify)
 
 
 # let's find transit providers in Madison, WI
@@ -24,6 +32,12 @@ search_results = urbanaccess.gtfsfeeds.search(search_text='madison')
 # 4 results will be returned, you can see them by printing the dataframe below
 print('Results from searching for Madison on now-defunct GTFS Data Exchange')
 print(search_results.head(5))
+
+# =============
+# Section break
+# =============
+continue_check(('We just queried for transit providers with UA. '
+                'Next, we will specify a transit resource to download.'))
 
 # add a feed to the gtfs to include in the analysis
 feeds = urbanaccess.gtfsfeeds.feeds
@@ -38,6 +52,11 @@ feeds.add_feed(new_feed)
 # download the feed, will be placed in folders within data/gtfsfeed_text
 # according to the dict key name
 urbanaccess.gtfsfeeds.download()
+
+# =============
+# Section break
+# =============
+continue_check(('Next, we need to load the feeds into a Pandas DataFrame.'))
 
 # now that we have saved the raw gtfs data, we need to load it in
 gtfsfeed_path = None # use default gtfs save location
@@ -54,6 +73,10 @@ loaded_feeds = urbanaccess.gtfs.load.gtfsfeed_to_df(gtfsfeed_path,
                                                     bbox,
                                                     remove_stops_outsidebbox,
                                                     append_definitions)
+# =============
+# Section break
+# =============
+continue_check(('Next, we need to interpolate stop times data from GTFS.'))
 
 # what remains an empty dataframe is stop_times_int, which we still
 # need to generate before we can get to calculating headways
@@ -80,17 +103,32 @@ stop_times_int = timedifference(stop_times_df = intermediate_interpolation)
 # now we can update loaded_feeds with this new dataframe
 loaded_feeds.stop_times_int = stop_times_int
 
+# =============
+# Section break
+# =============
+continue_check(('Now we can calculate headways with the interpolated data.'))
+
 # now we need to calculate the headways, given the downloaded gtfs
 headway_timerange = ['07:00:00','10:00:00'] # approx a.m. peak
 # the below function updates loaded_feeds, so that headways is populated
 loaded_feeds = urbanaccess.gtfs.headways.headways(
                     loaded_feeds, headway_timerange)
 
+# =============
+# Section break
+# =============
+continue_check(('At this point we are able to save/reload the data locally.'))
+
 # save the results from these initial processing steps locally
 filename = 'temp_network_analyzed.h5'
 urbanaccess.gtfs.network.save_processed_gtfs_data(loaded_feeds, 'data', filename)
 # we can now reload from that save location if we want
 loaded_feeds = urbanaccess.gtfs.network.load_processed_gtfs_data('data', filename)
+
+# =============
+# Section break
+# =============
+continue_check(('Next, we need to generate the transit and osm networks.'))
 
 # to proceed, we need to generate a network describing the transit data
 ua_network = urbanaccess.gtfs.network.create_transit_net(
@@ -110,6 +148,10 @@ ua_network = urbanaccess.osm.network.create_osm_net(
                                 osm_nodes = osm_nodes,
                                 travel_speed_mph = 3, # walk speed average
                                 network_type = 'walk')
+# =============
+# Section break
+# =============
+continue_check(('Now we have all networks we need, so we can integrate them.'))
 
 urbanaccess_nw = urbanaccess.network.integrate_network(
                                 urbanaccess_network = ua_network,
