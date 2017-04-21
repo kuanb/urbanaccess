@@ -15,3 +15,7 @@ docker exec -it urbanaccess bash
 
 # Executing the script
 Feel free to either run `examples/example.py` or follow along and enter in each step yourself to understand the steps involved in running through a typical UrbanAccess workflow.
+
+
+# Using the Docker container while modifying the repo's codebase
+If you intend on making modifications to the UrbanAccess code base, it helps to not have to rebuild the Docker image everytime the UA repo has a change to its codebase. In this situation, it is helpful to expose the Docker container in such a way that the container and your development share access to the a shared folder (the repo). In order to create an environment where the Docker container shares the repo with your standard development environment, run the following command: `docker run --volume=$(pwd):/provisioning -it {container_name} bash`. `--volume=$(pwd):/provisioning` will indicate that the current directory (you shoud be navigated to the UA repo's root directory), it a shared volume with the Docker container.
