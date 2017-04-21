@@ -14,7 +14,7 @@ docker exec -it urbanaccess bash
 ```
 
 # Executing the script
-Feel free to either run `examples/example.py` or follow along and enter in each step yourself to understand the steps involved in running through a typical UrbanAccess workflow.
+Feel free to either run `examples/example.py` or follow along and enter in each step yourself to understand the steps involved in running through a typical UrbanAccess workflow. Entering `python` into the command prompt within the Docker container will drop you into a Python repl, which will enable you to walk through the `example.py` code step by step. You can do this by copying and pasting or, if you choose run the `example.py` script, it will move through each step and thenreturn a prompt (`y` or `N`) to ask whether you want to continue on to the next step if you want to follow along in a more "automated" manner.
 
 
 # Using the Docker container while modifying the repo's codebase
