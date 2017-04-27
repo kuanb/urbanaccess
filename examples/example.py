@@ -1,9 +1,15 @@
+import geopandas as gpd
+import pandana as pdna
+import pandas as pd
+import shapely.wkt
 import sys
 import urbanaccess
-import pandana as pdna
 
 # sets whether 'interactive mode' is on
 CONTINUECHECKON = False
+
+# decide whether or not to plot the network from UA
+PLOT_NETWORK = False
 
 long_dash = ''.join(['-' for n in range(25)])
 def continue_check(custom_note='', clarify=False):
@@ -74,6 +80,7 @@ loaded_feeds = urbanaccess.gtfs.load.gtfsfeed_to_df(gtfsfeed_path,
                                                     bbox,
                                                     remove_stops_outsidebbox,
                                                     append_definitions)
+
 # =============
 # Section break
 # =============
@@ -155,10 +162,10 @@ ua_network = urbanaccess.osm.network.create_osm_net(
 continue_check(('Now we have all networks we need, so we can integrate them.'))
 
 # result urbanaccess_nw variables is an object with the following attributes:
-#   net_connector_edges,
-#   net_edges, net_nodes,
 #   osm_edges, osm_nodes,
 #   transit_edges, transit_nodes
+# and then returns the above, plus:
+#   net_connector_edges, net_edges, net_nodes
 urbanaccess_nw = urbanaccess.network.integrate_network(
                                 urbanaccess_network = ua_network,
                                 headways = True,
@@ -166,14 +173,15 @@ urbanaccess_nw = urbanaccess.network.integrate_network(
                                 headway_statistic = 'mean')
 
 color_range = urbanaccess.plot.col_colors(
-                        df=urbanaccess_nw.net_connector_edges,
+                        df=urbanaccess_nw.net_edges,
                         col='mean',
                         num_bins=5,
                         cmap='YlOrRd',
                         start=0.1,
                         stop=0.9)
 
-urbanaccess.plot.plot_net(
+if PLOT_NETWORK:
+    urbanaccess.plot.plot_net(
                         nodes=urbanaccess_nw.net_nodes,
                         edges=urbanaccess_nw.net_edges,
                         x_col='x',
@@ -191,3 +199,59 @@ urbanaccess.plot.plot_net(
                         node_zorder=3,
                         nodes_only=False)
 
+# now to shift over to pandana's domain
+nod_x = urbanaccess_nw.net_nodes['x']
+nod_y = urbanaccess_nw.net_nodes['y']
+
+# use the integer representation of each from and to id
+# (pandana can't handle them as strings)
+edg_fr = urbanaccess_nw.net_edges['from_int']
+edg_to = urbanaccess_nw.net_edges['to_int']
+edg_wt_df = urbanaccess_nw.net_edges[['weight']]
+
+# insantiate a pandana network object
+# set twoway to false since UA networks are oneways
+p_net = pdna.Network(nod_x, nod_y, edg_fr, edg_to, edg_wt_df, twoway=False)
+
+# precompute step, requires a max 'horizon' distance
+horizon_dist = 60
+p_net.precompute(horizon_dist)
+
+# read in an example dataset
+blocks_df = pd.read_csv('./data/blocks.csv')
+geometry = blocks_df['geometry'].map(_parse_wkt)
+blocks_df = blocks_df.drop('geometry', axis=1)
+crs = {'init': 'epsg:4326'}
+blocks_gdf = gpd.GeoDataFrame(blocks_df, crs=crs, geometry=geometry)
+
+# we need to extract the point lat/lon values
+blocks_gdf['x'] = blocks_gdf.centroid.map(lambda p: p.x)
+blocks_gdf['y'] = blocks_gdf.centroid.map(lambda p: p.y)
+
+#  set node_ids as an attribute on the geodataframe
+blocks_gdf['node_ids'] = p_net.get_node_ids(blocks_gdf['x'], blocks_gdf['y'])
+p_net.set(blocks_gdf['node_ids'],
+          variable=blocks_gdf['emp'],
+          name='emp')
+
+
+for n in [15,30,45,60]:
+    s = p_net.aggregate(n, type='sum', decay='linear', imp_name='weight', name='emp')
+    a, b, c = p_net.plot(s, 
+             bbox=(bbox[1], bbox[0], bbox[3], bbox[2]),
+             fig_kwargs={'figsize': [35, 35]},
+             bmap_kwargs={'suppress_ticks': False,
+                          'resolution': 'h', 'epsg': '26943'},
+             plot_kwargs={'cmap': 'hot', 's': 8, 'edgecolor': 'none'})
+    c.set_axis_bgcolor('black')
+    b.savefig('testplot_' + str(n) + '_min.png', facecolor='black')
+
+# helper functions
+def _parse_wkt(s):
+    """Parse wkt and ewkt strings into shapely shapes.
+
+    For ewkt (the PostGIS extension to wkt), the SRID indicator is removed.
+    """
+    if s.startswith('SRID'):
+        s = s[s.index(';') + 1:]
+    return shapely.wkt.loads(s)

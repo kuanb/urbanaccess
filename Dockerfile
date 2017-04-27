@@ -28,10 +28,10 @@ RUN pip install tables
 RUN mkdir -p /provisioning
 WORKDIR /provisioning
 
-# also need libgeos for Python Shapely package
+# also need libgeos for Shapely, Pandana
 RUN apt-get update
 RUN apt-get -yq install libgeos-dev
-RUN echo "Installing GEOS libraries..." && \
+RUN echo "Installing Spatial Index library..." && \
     mkdir -p /provisioning/spatialindex && \
     cd /provisioning/spatialindex && \
     curl -# -O http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz && \
@@ -42,6 +42,39 @@ RUN echo "Installing GEOS libraries..." && \
     make install && \
     ldconfig && \
     rm -rf /provisioning/spatialindex
+
+RUN echo "Installing GEOS library..." && \
+    mkdir -p /provisioning/geos && \
+    cd /provisioning/geos && \
+    curl -# -O http://download.osgeo.org/geos/geos-3.5.1.tar.bz2 && \
+    tar -xjf geos-3.5.1.tar.bz2 && \
+    cd geos-3.5.1 && \
+    ./configure && \
+    make -j$(python -c 'import multiprocessing; print(multiprocessing.cpu_count())') && \
+    make install && \
+    ldconfig -v && \
+    rm -rf /provisioning/geos*
+
+RUN echo "Installing Proj4 library..." && \
+    mkdir -p /provisioning/proj4 && \
+    cd /provisioning/proj4 && \
+    curl -# -O http://download.osgeo.org/proj/proj-4.9.3.tar.gz && \
+    tar -xf proj-4.9.3.tar.gz && \
+    cd proj-4.9.3 && \
+    ./configure && \
+    make -j$(python -c 'import multiprocessing; print(multiprocessing.cpu_count())') && \
+    make install && \
+    ldconfig -v && \
+    rm -rf /provisioning/proj4*
+
+RUN echo "Installing Basemap plotting library..." && \
+    mkdir -p /provisioning/basemap && \
+    cd /provisioning/basemap && \
+    wget https://sourceforge.net/projects/matplotlib/files/matplotlib-toolkits/basemap-1.0.7/basemap-1.0.7.tar.gz && \
+    tar -xf basemap-1.0.7.tar.gz && \
+    cd basemap-1.0.7 && \
+    python setup.py install && \
+    rm -rf /provisioning/basemap
 
 # return to main directory after installing libgeos
 RUN cd /provisioning
